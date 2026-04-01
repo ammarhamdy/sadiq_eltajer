@@ -7,6 +7,7 @@
 # Python
 __pycache__/
 *.pyc
+.idea/
 
 # Virtual env
 venv/
