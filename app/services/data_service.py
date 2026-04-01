@@ -15,6 +15,13 @@ def fetch_ads():
     return rows
 
 
+def fetch_ad_titles():
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(GET_ADS)
+            return [row[0] for row in cursor.fetchall()]
+
+
 if __name__ == '__main__':
     from pprint import pprint
 

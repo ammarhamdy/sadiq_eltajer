@@ -1,0 +1,57 @@
++-------------------------+
+| Tables_in_sadiq_eltajer |
++-------------------------+
+| ad_activities           |
+| ad_additional_features  |
+| ad_attachments          |
+| ad_features             |
+| ad_images               |
+| ad_panoramas            |
+| ad_title_deeds          |
+| ad_views                |
+| additional_features     |
+| admins                  |
+| ads                     |
+| advantages              |
+| areas                   |
+| backups                 |
+| cache                   |
+| cache_locks             |
+| cities                  |
+| classification_type     |
+| classifications         |
+| deposits                |
+| device_tokens           |
+| failed_jobs             |
+| faqs                    |
+| favourites              |
+| features                |
+| home_ad_sliders         |
+| job_batches             |
+| jobs                    |
+| migrations              |
+| model_has_permissions   |
+| model_has_roles         |
+| neighborhoods           |
+| notifications           |
+| offer_ads               |
+| offers                  |
+| order_properties        |
+| otps                    |
+| pages                   |
+| password_reset_tokens   |
+| payments                |
+| permissions             |
+| personal_access_tokens  |
+| region_cities           |
+| role_has_permissions    |
+| roles                   |
+| sessions                |
+| settings                |
+| system_contacts         |
+| types                   |
+| user_block_lists        |
+| users                   |
+| visitors                |
++-------------------------+
+52 rows in set (0.00 sec)
