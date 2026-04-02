@@ -10,7 +10,7 @@ import logging
 import copy
 from typing import Any, Optional
 import httpx
-from app.config import BASE_URL
+from config import BASE_URL
 from app.services.search_payload import SearchPayload, _DEFAULT_HEADERS
 
 logger = logging.getLogger(__name__)

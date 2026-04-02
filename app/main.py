@@ -2,9 +2,9 @@ import logging
 import sys
 import asyncio
 
-from app.reporter.summry_repoter import summarise_response, print_summary
+from reporter.summry_repoter import summarise_response, print_summary
 from app.services.data_service import fetch_ad_titles
-from app.services.http_service import send_request, print_response
+from app.services.http_service import send_request
 from app.services.request_builder import RequestBuilder
 
 
@@ -14,7 +14,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("sadiq-eltajer-1.log", encoding="utf-8", mode="w")
+        logging.FileHandler("logs/sadiq-eltajer-1.log", encoding="utf-8", mode="w")
     ],
 )
 
