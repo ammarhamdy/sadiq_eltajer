@@ -1,6 +1,8 @@
 import logging
 import sys
 import asyncio
+
+from app.reporter.summry_repoter import summarise_response, print_summary
 from app.services.data_service import fetch_ad_titles
 from app.services.http_service import send_request, print_response
 from app.services.request_builder import RequestBuilder
@@ -12,7 +14,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("sadiq-eltajer.log", encoding="utf-8"),
+        logging.FileHandler("sadiq-eltajer-1.log", encoding="utf-8", mode="w")
     ],
 )
 
@@ -24,7 +26,7 @@ async def main() -> None:
     api_token = "o3fNzP7ZeAX97q5mjjtqRVon51jrOol8"
     titles = await asyncio.to_thread(fetch_ad_titles)
 
-    semaphore = asyncio.Semaphore(5)
+    semaphore = asyncio.Semaphore(1)
 
     async def process_title(title: str):
         async with semaphore:
@@ -45,7 +47,8 @@ async def main() -> None:
     for task in asyncio.as_completed(tasks):
         try:
             result = await task
-            print_response(result)
+            print_summary(summarise_response(result))
+            # print_response(result)
         except Exception:
             log.exception("Request failed")
 

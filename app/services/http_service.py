@@ -60,7 +60,7 @@ async def send_request(
 
 def print_response(response: httpx.Response) -> None:
     """Pretty-print JSON body; fall back to raw text on decode failure."""
-    logger.info("Response headers: %s", dict(response.headers))
+    # logger.info("Response headers: %s", dict(response.headers))
 
     try:
         payload = response.json()

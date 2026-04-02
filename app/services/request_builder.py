@@ -5,15 +5,13 @@ A clean, reusable request-builder for the Sadiq El-Tajer smart-assistant API.
 """
 
 from __future__ import annotations
-
 import json
 import logging
 import copy
 from typing import Any, Optional
 import httpx
-
 from app.config import BASE_URL
-from app.services.search_payload import SearchPayload, _DEFAULT_HEADERS, _SENSITIVE_HEADERS
+from app.services.search_payload import SearchPayload, _DEFAULT_HEADERS
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +108,9 @@ class RequestBuilder:
         self._validate()
 
         params: dict[str, Any] = {
-            "prompt": self._prompt,
+            "keyword": self._prompt,
+            "per_page": "1000",
+            "page": "1",
             "max_completion_tokens": str(self._max_tokens),
             "current_search_payload": self._payload.to_json(),
             **self._extra_params,
@@ -140,19 +140,19 @@ class RequestBuilder:
 
     def _log_request(self, request: dict[str, Any]) -> None:
         """Log request details with sensitive header values masked."""
-        safe_headers = {
-            k: ("***MASKED***" if k.lower() in _SENSITIVE_HEADERS else v)
-            for k, v in request["headers"].items()
-        }
-        logger.info("Request URL    : %s", request["url"])
+        # safe_headers = {
+        #     k: ("***MASKED***" if k.lower() in _SENSITIVE_HEADERS else v)
+        #     for k, v in request["headers"].items()
+        # }
+        logger.info("Request URL    : %s", request["url"][:100] + '..')
         logger.info(
             "Query params   :\n%s",
-            json.dumps(request["params"], ensure_ascii=False, indent=2),
+            json.dumps(request["params"], ensure_ascii=False, indent=2)[:100] + '..',
         )
-        logger.info(
-            "Request headers:\n%s",
-            json.dumps(safe_headers, indent=2),
-        )
+        # logger.info(
+        #     "Request headers:\n%s",
+        #     json.dumps(safe_headers, indent=2),
+        # )
 
     #  Convenience: re-usable factory presets
     @classmethod
