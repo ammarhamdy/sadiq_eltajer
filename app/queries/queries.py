@@ -7,23 +7,52 @@ AND title REGEXP '[^a-z]';
 """
 
 GET_ALIVE_ADS = """
-SELECT 
-    title, 
-    classification_id,
-    type_id,
-    price, 
-    price_type, 
-    area_id, 
-    city_id, 
-    neighborhood_id,
-    number_of_rooms, 
-    number_of_bathrooms, 
-    area_by_meter, 
-    street_frontage
-FROM ads  
-WHERE status = 'accepted' 
-AND deleted_at IS NULL
-AND title REGEXP '[^a-z]';
+SELECT
+    ads.title,
+    classifications.name AS classification,
+    types.name AS type,
+    ads.price,
+
+    CASE ads.price_type
+        WHEN 'negotiable' THEN 'سوم'
+        WHEN 'fixed' THEN 'حد'
+        WHEN 'ignore_negotiable' THEN 'علي السوم'
+    END AS price_type,
+
+    areas.name AS area,
+    cities.name AS city,
+    neighborhoods.name AS neighborhood,
+    ads.number_of_rooms,
+    ads.number_of_bathrooms,
+    ads.area_by_meter,
+    ads.street_frontage
+
+FROM ads
+
+INNER JOIN (
+    SELECT MAX(id) AS id
+    FROM ads
+    WHERE status = 'accepted'
+      AND deleted_at IS NULL
+      AND title REGEXP '[^a-z]'
+    GROUP BY title
+) unique_ads
+    ON unique_ads.id = ads.id
+
+LEFT JOIN classifications
+    ON classifications.id = ads.classification_id
+
+LEFT JOIN types
+    ON types.id = ads.type_id
+
+LEFT JOIN areas
+    ON areas.id = ads.area_id
+
+LEFT JOIN cities
+    ON cities.id = ads.city_id
+
+LEFT JOIN neighborhoods
+    ON neighborhoods.id = ads.neighborhood_id;
 """
 
 GET_ALIVE_AREAS = """

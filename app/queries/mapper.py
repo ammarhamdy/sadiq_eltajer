@@ -1,5 +1,5 @@
-from typing import Iterable, Type
-
+from typing import Type
+from collections.abc import Iterable
 from model.Ad import Ad
 from model.BaseEntity import BaseEntity
 
@@ -13,8 +13,6 @@ def map_alive_entities[T: BaseEntity](
         for id_, name in rows
     ]
 
-
-from collections.abc import Iterable
 
 
 def map_ads(rows: Iterable[tuple]) -> list[Ad]:

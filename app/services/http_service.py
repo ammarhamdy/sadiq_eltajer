@@ -1,76 +1,83 @@
 import asyncio
-import json
 import logging
-from typing import Any, Optional
+import random
+from typing import  Optional
 import httpx
+from httpx import AsyncClient, Response
+from core.config import BASE_URL
+from core.decorations import timeout_guard
+from services.header_generator import  default_headers
+from services.parser import ResponseParser
 
 
 logger = logging.getLogger(__name__)
+CHAT_URL = BASE_URL + "/chat"
+KEYWORDS_LIST = BASE_URL + "/api/ads/keywords-list"
+RETRY_DELAYS: tuple[float, ...] = (
+    0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 3.0, 5.0, 7.5, 10.0
+)
 
 
-async def send_request(
-    request: dict[str, Any],
-    max_retries: int,
-    retry_delay: float,
-) -> httpx.Response:
-    """
-    Execute the GET request with retry logic.
-    Raises the last exception if all attempts fail.
-    """
-    last_exception: Optional[Exception] = None
+class HTTPService:
 
-    async with httpx.AsyncClient() as client:
-        for attempt in range(1, max_retries + 1):
-            try:
-                logger.info("Attempt %d / %d …", attempt, max_retries)
+    def __init__(self, timeout: float = 30.0) -> None:
+        self._client: Optional[AsyncClient] = None
+        self._token: str | None = None
+        self._timeout = timeout
 
-                response = await client.get(**request)
+    async def __aenter__(self) -> "HTTPService":
+        self._client = AsyncClient(timeout=self._timeout)
+        return self
 
-                if response.status_code != 200:
-                    logger.warning(
-                        "Non-200 response: HTTP %d — %s",
-                        response.status_code,
-                        response.text[:300],
-                    )
-                    last_exception = httpx.HTTPStatusError(
-                        f"HTTP {response.status_code}",
-                        request=response.request,
-                        response=response,
-                    )
-                else:
-                    logger.info("HTTP %d — success.", response.status_code)
-                    return response
+    async def __aexit__(self, *_: object) -> None:
+        if self._client:
+            await self._client.aclose()
+            self._client = None
 
-            except httpx.TimeoutException as exc:
-                logger.error("Request timed out (attempt %d): %s", attempt, exc)
-                last_exception = exc
+    async def run(self, keyword: str, page: int) -> None:
+        assert self._client is not None, "Use HTTPService as an async context manager."
+        logger.info("Initializing session…")
+        if not await self._acquire_token():
+            logger.error("Failed to retrieve CSRF token. Aborting.")
+            return
+        await self._get_keywords(keyword=keyword, page=page)
 
-            except httpx.RequestError as exc:
-                logger.error("Request error (attempt %d): %s", attempt, exc)
-                last_exception = exc
+    async def _acquire_token(self) -> bool:
+        """
+        Fetch the login page and extract the CSRF token.
 
-            if attempt < max_retries:
-                logger.info("Retrying in %s s …", retry_delay)
-                await asyncio.sleep(retry_delay)
+        Returns:
+            True if the token was successfully obtained, False otherwise.
+        """
+        try:
+            if self._client is None:
+                return False
+            response = await self._client.get(BASE_URL)
+            self._token = ResponseParser.extract_csrf_token(response)
+            return self._token is not None
+        except httpx.HTTPError as exc:
+            logger.error("HTTP error during token acquisition: %s", exc)
+            return False
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Unexpected error during token acquisition: %s", exc)
+            return False
 
-    if last_exception is not None:
-        raise last_exception
-    raise RuntimeError("Request failed without an explicit exception")
-
-
-def print_response(response: httpx.Response) -> None:
-    """Pretty-print JSON body; fall back to raw text on decode failure."""
-    # logger.info("Response headers: %s", dict(response.headers))
-
-    try:
-        payload = response.json()
-        print("\n─── Response JSON ───────────────────────────────────────────")
-        print(json.dumps(payload, indent=2, ensure_ascii=False))
-        print("─────────────────────────────────────────────────────────────\n")
-    except json.JSONDecodeError:
-        logger.warning("Response is not valid JSON — printing raw text instead.")
-        print("\n─── Response Text ───────────────────────────────────────────")
-        print(response.text)
-        print("─────────────────────────────────────────────────────────────\n")
+    @timeout_guard()
+    async def _get_keywords(self, keyword: str, page: int = 1) -> Response | None:
+        if not self._client:
+            return None
+        return await self._client.get(
+            KEYWORDS_LIST,
+            headers=default_headers(),
+            cookies=self._client.cookies,
+            params={
+                "keyword": keyword,
+                "per_page": 100,
+                "page": page,
+            },
+        )
 
 
+if __name__ == "__main__":
+    service = HTTPService()
+    service.run()
