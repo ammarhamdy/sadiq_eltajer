@@ -1,6 +1,4 @@
-import asyncio
 import logging
-import random
 from typing import  Optional
 import httpx
 from httpx import AsyncClient, Response
@@ -12,7 +10,8 @@ from services.parser import ResponseParser
 
 logger = logging.getLogger(__name__)
 CHAT_URL = BASE_URL + "/chat"
-KEYWORDS_LIST = BASE_URL + "/api/ads/keywords-list"
+KEYWORDS_LIST_URL = BASE_URL + "/api/ads/keywords-list"
+ASK_URL = BASE_URL + "/api/ads/keywords-list"
 RETRY_DELAYS: tuple[float, ...] = (
     0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 3.0, 5.0, 7.5, 10.0
 )
@@ -34,13 +33,17 @@ class HTTPService:
             await self._client.aclose()
             self._client = None
 
-    async def run(self, keyword: str, page: int) -> None:
+    async def run(self, keyword: str, page: int=1) -> Response | None:
         assert self._client is not None, "Use HTTPService as an async context manager."
         logger.info("Initializing session…")
         if not await self._acquire_token():
             logger.error("Failed to retrieve CSRF token. Aborting.")
-            return
-        await self._get_keywords(keyword=keyword, page=page)
+            return None
+        response = await self._get_keywords_list(keyword=keyword, page=page)
+        if not response:
+            logger.error(f"No Response for _get_keywords_list({keyword}). Aborting.")
+            return None
+        return response
 
     async def _acquire_token(self) -> bool:
         """
@@ -63,11 +66,11 @@ class HTTPService:
             return False
 
     @timeout_guard()
-    async def _get_keywords(self, keyword: str, page: int = 1) -> Response | None:
+    async def _get_keywords_list(self, keyword: str, page: int = 1) -> Response | None:
         if not self._client:
             return None
         return await self._client.get(
-            KEYWORDS_LIST,
+            KEYWORDS_LIST_URL,
             headers=default_headers(),
             cookies=self._client.cookies,
             params={
@@ -77,7 +80,3 @@ class HTTPService:
             },
         )
 
-
-if __name__ == "__main__":
-    service = HTTPService()
-    service.run()

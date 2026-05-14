@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 class ResponseParser:
     """Stateless utility for extracting data from HTTP responses."""
 
-    TOKEN_FIELD = "token"
+    TOKEN_FIELD = "_token"
 
     @staticmethod
     def extract_csrf_token(response: httpx.Response) -> str | None:
@@ -25,4 +25,4 @@ class ResponseParser:
         token_input = soup.find("input", attrs={"name": ResponseParser.TOKEN_FIELD})
         if not token_input:
             return None
-        return token_input.get("value") or None
+        return str(token_input.get("value")) or None
